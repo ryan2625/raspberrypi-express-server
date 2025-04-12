@@ -20,9 +20,8 @@ async function killProcess() {
   console.log(`Spinning up FASTAPI server @ ${fastApi} in ${__dirname}`)
   const process = spawn('bash', [
     '-cx',
-    `cd livestream && source venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port ${fastApi} --reload &`
+    `cd livestream && source venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port ${fastApi} --reload`
   ], {
-    detached: true,
     stdio: 'ignore'
   });
 }

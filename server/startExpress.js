@@ -14,6 +14,6 @@ async function killProcess() {
     console.log(`No process found on port ${express}`)
   }
   console.log(`Spinning up EXPRESS server @ ${express}`)
-  await execAsync('sudo npm run start &')
+  await execAsync('sudo npm run start')
 }
 killProcess()
