@@ -9,10 +9,8 @@ from threading import Condition
 import logging
 
 app = FastAPI()
-# Global camera variable
 picam2 = None
 
-# Initialize camera
 def get_camera():
     global picam2
     if picam2 is None:
@@ -49,12 +47,10 @@ def generate_frames(output):
 
 @app.on_event("startup")
 async def startup_event():
-    # Initialize camera on startup
     get_camera()
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    # Clean up camera on shutdown
     global picam2
     if picam2 is not None:
         try:
@@ -78,7 +74,6 @@ async def mjpeg():
         video_config = camera.create_video_configuration(main={"size": (1280, 720)})
         camera.configure(video_config)
         
-        # Check if camera is already recording and stop it
         try:
             camera.stop_recording()
         except:
