@@ -11,6 +11,7 @@
   Debug file...
   <button id="start_btn">Start Server</button>
   <button id="stop_btn">Stop Server</button>
+  <button id="led_btn">Toggle LED</button>
   <img id="cameraImage" width="640" height="480" alt="Camera feed">
 </body>
 <script>
@@ -20,6 +21,9 @@
   document.getElementById('stop_btn').addEventListener('click', async () => {
     await fetch("/stop", { method: 'POST' });
   });
+  document.getElementById('led_btn').addEventListener('click', async () => {
+    await fetch("https://westbrookpermaban.uk/led", { method: 'GET' });
+  })
   const img = document.getElementById('cameraImage')
 
   const socket = new WebSocket("wss://mjpeg.westbrookpermaban.uk/ws")
