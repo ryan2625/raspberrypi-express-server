@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python Debugger: Current File with Arguments (FASTAPI)",
+      "type": "debugpy",
+      "request": "launch",
+      "console": "integratedTerminal",
+      "module": "uvicorn",
+      "args": [
+        "main:app",
+        "--port",
+        "10008",
+        "--reload"
+      ],
+      "cwd": "${workspaceFolder}/IOT-cat/server/livestream"
+    }
+  ]
+}

@@ -7,7 +7,7 @@ from fastapi import FastAPI, WebSocket
 from fastapi.staticfiles import StaticFiles
 from threading import Condition
 from contextlib import asynccontextmanager
-
+# see:  https://datasheets.raspberrypi.com/camera/picamera2-manual.pdf
 
 class StreamingOutput(io.BufferedIOBase):
     def __init__(self):
@@ -40,7 +40,7 @@ class JpegStream:
         )
         self.picam2.configure(video_config)
         output = StreamingOutput()
-        self.picam2.start_recording(MJPEGEncoder(), FileOutput(output), Quality.MEDIUM)
+        self.picam2.start_recording(MJPEGEncoder(), FileOutput(output), Quality.VERY_HIGH)
 
         try:
             while self.active:
@@ -103,3 +103,7 @@ async def start_stream():
 async def stop_stream():
     await jpeg_stream.stop()
     return {"message": "Stream stopped"}
+
+@app.get("/")
+async def send_status():
+    return {"message": "FastAPI online"}
