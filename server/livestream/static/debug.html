@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+
+<body>
+  Debug file...
+  <button id="start_btn">Start Server</button>
+  <button id="stop_btn">Stop Server</button>
+  <img style="width: 1000px; height: 1000px;" src="/ws">
+</body>
+<script>
+  document.getElementById('start_btn').addEventListener('click', async () => {
+    await fetch("/start", { method: 'POST' });
+  })
+  document.getElementById('stop_btn').addEventListener('click', async () => {
+    await fetch("/stop", { method: 'POST' });
+  });
+</script>
+
+</html>

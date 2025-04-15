@@ -1,27 +1,17 @@
 import io
+import asyncio
 from picamera2 import Picamera2
 from picamera2.encoders import MJPEGEncoder, Quality
 from picamera2.outputs import FileOutput
-from fastapi import FastAPI
-from starlette.background import BackgroundTask
-from fastapi.responses import Response, StreamingResponse
+from fastapi import FastAPI, WebSocket
+from fastapi.staticfiles import StaticFiles
 from threading import Condition
-import logging
+from contextlib import asynccontextmanager
 
-app = FastAPI()
-picam2 = None
-
-def get_camera():
-    global picam2
-    if picam2 is None:
-        try:
-            picam2 = Picamera2()
-        except Exception as e:
-            logging.error(f"Error initializing camera: {str(e)}")
-    return picam2
 
 class StreamingOutput(io.BufferedIOBase):
     def __init__(self):
+        super().__init__()
         self.frame = None
         self.condition = Condition()
 
@@ -30,68 +20,86 @@ class StreamingOutput(io.BufferedIOBase):
             self.frame = buf
             self.condition.notify_all()
 
-    def read(self):
+    async def read(self):
         with self.condition:
             self.condition.wait()
             return self.frame
 
-def generate_frames(output):
-    while True:
-        try:
-            frame = output.read()
-            yield (b"--frame\r\n" b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
-        except Exception as e:
-            logging.error(f"Error in generate_frames: {str(e)}")
-            break
-    print("done")
 
-@app.on_event("startup")
-async def startup_event():
-    get_camera()
+class JpegStream:
+    def __init__(self):
+        self.active = False
+        self.connections = set()
+        self.picam2 = None
+        self.task = None
 
-@app.on_event("shutdown")
-async def shutdown_event():
-    global picam2
-    if picam2 is not None:
-        try:
-            picam2.close()
-        except:
-            pass
-        picam2 = None
-
-@app.get("/")
-def root():
-    return {"message": "Camera API is running"}
-
-@app.get("/mjpeg")
-async def mjpeg():
-    camera = get_camera()
-    if camera is None:
-        return Response(content="Camera not available", media_type="text/plain", status_code=500)
-    
-    try:
-        output = StreamingOutput()
-        video_config = camera.create_video_configuration(main={"size": (1280, 720)})
-        camera.configure(video_config)
-        
-        try:
-            camera.stop_recording()
-        except:
-            pass
-            
-        camera.start_recording(MJPEGEncoder(), FileOutput(output), Quality.VERY_HIGH)
-        
-        def stop():
-            try:
-                camera.stop_recording()
-            except:
-                pass
-                
-        return StreamingResponse(
-            generate_frames(output),
-            media_type="multipart/x-mixed-replace; boundary=frame",
-            background=BackgroundTask(stop),
+    async def stream_jpeg(self):
+        self.picam2 = Picamera2()
+        video_config = self.picam2.create_video_configuration(
+            main={"size": (1920, 1080)}
         )
-    except Exception as e:
-        logging.error(f"Error starting video stream: {str(e)}")
-        return Response(content=f"Error: {str(e)}", media_type="text/plain", status_code=500)
+        self.picam2.configure(video_config)
+        output = StreamingOutput()
+        self.picam2.start_recording(MJPEGEncoder(), FileOutput(output), Quality.MEDIUM)
+
+        try:
+            while self.active:
+                jpeg_data = await output.read()
+                tasks = [
+                    websocket.send_bytes(jpeg_data)
+                    for websocket in self.connections.copy()
+                ]
+                await asyncio.gather(*tasks, return_exceptions=True)
+        finally:
+            self.picam2.stop_recording()
+            self.picam2.close()
+            self.picam2 = None
+
+    async def start(self):
+        if not self.active:
+            self.active = True
+            self.task = asyncio.create_task(self.stream_jpeg())
+
+    async def stop(self):
+        if self.active:
+            self.active = False
+            if self.task:
+                await self.task
+                self.task = None
+
+jpeg_stream = JpegStream()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    print("done")
+    await jpeg_stream.stop()
+
+app = FastAPI(lifespan=lifespan)
+
+app.mount("/static", StaticFiles(directory='static'), name='static')
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    jpeg_stream.connections.add(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except Exception:
+        pass
+    finally:
+        jpeg_stream.connections.remove(websocket)
+        if not jpeg_stream.connections:
+            await jpeg_stream.stop()
+
+@app.post("/start")
+async def start_stream():
+    await jpeg_stream.start()
+    return {"message": "Stream started"}
+
+
+@app.post("/stop")
+async def stop_stream():
+    await jpeg_stream.stop()
+    return {"message": "Stream stopped"}
