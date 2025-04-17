@@ -12,19 +12,33 @@
   <button id="start_btn">Start Server</button>
   <button id="stop_btn">Stop Server</button>
   <button id="led_btn">Toggle LED</button>
+  <p></p>
+  <button id="connections">Fetch connections</button>
   <img id="cameraImage" width="640" height="480" alt="Camera feed">
 </body>
 <script>
+  const img = document.getElementById('cameraImage')
   document.getElementById('start_btn').addEventListener('click', async () => {
     await fetch("/start", { method: 'POST' });
   })
   document.getElementById('stop_btn').addEventListener('click', async () => {
     await fetch("/stop", { method: 'POST' });
+    img.src = ""
   });
   document.getElementById('led_btn').addEventListener('click', async () => {
     await fetch("https://westbrookpermaban.uk/led", { method: 'GET' });
   })
-  const img = document.getElementById('cameraImage')
+  document.getElementById('connections').addEventListener('click', async () => {
+    try {
+      let response = await fetch("/connections", { method: 'GET' });
+      let data = await response.json()
+      console.log("Connections data:", data);
+      document.querySelector('p').innerHTML = `Connection count: ${data.connections}`
+    } catch (error) {
+      console.error("Error fetching connections:", error)
+      document.querySelector('p').innerHTML = `Error fetching connections: ${error.message}`
+    }
+  })
 
   const socket = new WebSocket("wss://mjpeg.westbrookpermaban.uk/ws")
 

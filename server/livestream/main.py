@@ -30,6 +30,9 @@ class JpegStream:
     def __init__(self):
         self.active = False
         self.connections = set()
+        self.activeStreams = 0
+        self.maxStreams = 5
+        self.masterSocket = None
         self.picam2 = None
         self.task = None
 
@@ -107,3 +110,7 @@ async def stop_stream():
 @app.get("/")
 async def send_status():
     return {"message": "FastAPI online"}
+
+@app.get("/connections")
+async def send_connections():
+    return {'connections': len(jpeg_stream.connections)}

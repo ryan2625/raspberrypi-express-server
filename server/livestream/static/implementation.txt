@@ -1,0 +1,20 @@
+Todo - 
+1. Implement max connection rate (4-5)
+2. Associate a time stamp with each websocket connection
+3. Assign a timeout for each (~5 minutes)
+4. Assign a warning to refresh the timeout for the stream after 4.5 min
+5. Add a queue system for when max amount of connections 
+is reached
+6. Once timeout is complete, cut off the websocket
+Leave request that enables user to request to 
+'reconnect'
+(Users will be automatically connected when the app loads
+if max is not reached)
+
+Decide how to handle concurrent users:
+7. Will keep track of the 'active controller'
+(One at a time)
+8. FastAPI server will generate auth token and 
+will allow the user to use that to make
+authenticated express requests
+9. Make sure all streams are authenticated??
