@@ -18,3 +18,14 @@ Decide how to handle concurrent users:
 will allow the user to use that to make
 authenticated express requests
 9. Make sure all streams are authenticated??
+
+
+Future implementation:
+Implement SERVER SIDE rate limiters not in the cloud (cloudflare)
+
+Current IMMEDIATE todo:
+Timestamp & timeout websocket connections, POC for client side warning
+Implement queue structure
+
+Idea:
+Cloud such as twitch to livestream if I can't keep consistent bandwidth
