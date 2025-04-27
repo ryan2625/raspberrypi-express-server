@@ -46,7 +46,7 @@ class JpegStream:
         self.picam2.video_configuration.controls.FrameRate = 15.0
         self.picam2.video_configuration.size = (1920, 1080)
         output = StreamingOutput()
-        self.picam2.start_recording(MJPEGEncoder(), FileOutput(output), Quality.MEDIUM)
+        self.picam2.start_recording(MJPEGEncoder(), FileOutput(output), Quality.VERY_LOW)
 
         try:
             while self.active:

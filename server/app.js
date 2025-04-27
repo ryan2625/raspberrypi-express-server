@@ -1,9 +1,10 @@
-import express from 'express';
+import express, { json } from 'express';
 import morgan from "morgan"
 import cors from 'cors'
 import { router as countRouter } from "./src/api/routes/count.js";
 import { router as statsRouter } from "./src/api/routes/stats.js";
 import { router as ledRouter } from "./src/api/routes/led.js"
+import { router as controlRouter } from "./src/api/routes/control.js"
 import { configDotenv } from 'dotenv'
 
 configDotenv()
@@ -16,10 +17,12 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(morgan("combined"))
+app.use(express.json())
 
 app.use('/count', countRouter);
 app.use('/stats', statsRouter);
 app.use('/led', ledRouter)
+app.use('/control', controlRouter)
 
 app.get('/', (req, res) => {
   res.send("Hello world!");

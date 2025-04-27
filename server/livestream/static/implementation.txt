@@ -29,3 +29,11 @@ Implement queue structure
 
 Idea:
 Cloud such as twitch to livestream if I can't keep consistent bandwidth
+
+New paradigm -
+Have youtube live low latency stream to all other clients
+but the master controller client directly accesses the mjpeg stream
+Master controller only gains access if captcha approved
+But how to implement ??
+Have express act as the bridge to the livestream 
+and only whitelist requests made from express? 
