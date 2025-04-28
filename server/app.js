@@ -1,14 +1,18 @@
-import express, { json } from 'express';
+import express from 'express';
 import morgan from "morgan"
 import cors from 'cors'
+import expressWs from 'express-ws'
+import { configDotenv } from 'dotenv'
+import { types, open, message } from "./src/utilities/ws.js"
 import { router as countRouter } from "./src/api/routes/count.js";
 import { router as statsRouter } from "./src/api/routes/stats.js";
 import { router as ledRouter } from "./src/api/routes/led.js"
 import { router as controlRouter } from "./src/api/routes/control.js"
-import { configDotenv } from 'dotenv'
 
+export const app = express()
+expressWs(app)
 configDotenv()
-const app = express();
+
 const port = process.env.EXPRESS_PORT
 const corsOptions = {
   origin: 'https://mjpeg.westbrookpermaban.uk',
@@ -27,6 +31,12 @@ app.use('/control', controlRouter)
 app.get('/', (req, res) => {
   res.send("Hello world!");
 });
+
+app.ws('/ws', (ws, req) => {
+  const s = ws
+  ws.on(types.OPEN, open)
+  ws.on(types.MSG, (msg) => { message(msg, s) })
+})
 
 app.listen(port, '0.0.0.0', () => {
   console.log(`Server waiting at ${port}`);

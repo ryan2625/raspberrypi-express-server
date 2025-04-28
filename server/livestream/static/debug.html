@@ -12,8 +12,10 @@
   <button id="start_btn">Start Server</button>
   <button id="stop_btn">Stop Server</button>
   <button id="led_btn">Toggle LED</button>
+  <button id="exp_btn">Express_serv</button>
   <p></p>
   <p></p>
+  <p id="exp-p"></p>
   <button id="connections">Fetch connections</button>
   <img id="cameraImage" width="640" height="480" alt="Camera feed">
 </body>
@@ -44,7 +46,7 @@
   const socket = new WebSocket("wss://mjpeg.westbrookpermaban.uk/ws")
 
   socket.addEventListener("open", (event) => {
-    console.log("WebSocket connected")
+    console.log("WebSocket connected via fastapi")
     socket.send("")
   });
 
@@ -66,6 +68,21 @@
   socket.addEventListener("error", (event) => {
     console.error("WebSocket error:", event)
   });
+
+  const expressSock = new WebSocket("wss://westbrookpermaban.uk/ws")
+
+  expressSock.addEventListener('open', (e) => {
+    console.log("Express connection opened")
+    expressSock.send("")
+  })
+
+  expressSock.addEventListener('message', async (e) => {
+    document.getElementById('exp-p').innerText = e.data
+  })
+
+  document.getElementById('exp_btn').addEventListener('click', () => {
+    expressSock.send("client message...")
+  })
 </script>
 
 </html>
