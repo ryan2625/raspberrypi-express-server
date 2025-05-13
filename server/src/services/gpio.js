@@ -58,10 +58,25 @@ const oled = new OLED(i2cBus, {
 
 export async function writei2c(req, res) {
   positionCursor(0, 0)
-  writeStringToI2C('HELP')
+  let s = 'WELCOME'
+  await writeStringToI2C(s)
+  await delay(250)
   positionCursor(1, 0)
-  writeStringToI2C('ME')
+  await writeStringToI2C(req?.body?.name.toUpperCase())
+  await writeStringToI2C('...')
+  let i = intervalPeriod()
+  await delay(5000)
+  clearInterval(i)
+  clearDisplay()
   res.json({ success: "true lol" })
+}
+
+async function intervalPeriod() {
+  let c = true
+  const periodInterval = setInterval(async () => {
+    c === true ? await writeStringToI2C('') : await writeStringToI2C('.')
+  }, 100)
+  return periodInterval
 }
 
 export async function flashBacklight(req, res) {
@@ -89,31 +104,44 @@ async function rawTimedWrite(dataInUpperNibble, cmndOrChar) {
   i2cBus.i2cWrite(I2C_ADDR, 1, Buffer.from([cleanData | I2C_BACKLIGHT | cleanRS]), handlei2cErr)
   i2cBus.i2cWrite(I2C_ADDR, 1, Buffer.from([cleanData | I2C_BACKLIGHT | I2C_ENABLE | cleanRS]), handlei2cErr)
   i2cBus.i2cWrite(I2C_ADDR, 1, Buffer.from([cleanData | I2C_BACKLIGHT | cleanRS]), handlei2cErr)
-  await delay(2)
+  await delay(10)
 }
 
 async function initializei2c() {
-  // Sending and initializing misc config bits, enabling 4b mode, etc
-  await delay(15)
+  await delay(50);
   // Set of pulsating 3s to reset & initialize with precise timings...
-  rawTimedWrite(0x30, I2C_REG_SELECT_CMD)
-  await sleep.usleep(4100)
-  rawTimedWrite(0x30, I2C_REG_SELECT_CMD)
-  await sleep.usleep(100)
-  rawTimedWrite(0x30, I2C_REG_SELECT_CMD)
-  //We then write a 2. I need to read the damn data sheet idk
-  rawTimedWrite(0x20, I2C_REG_SELECT_CMD)
+  await rawTimedWrite(0x30, I2C_REG_SELECT_CMD);
+  await sleep.usleep(4500);
+
+  await rawTimedWrite(0x30, I2C_REG_SELECT_CMD);
+  await sleep.usleep(150);
+
+  await rawTimedWrite(0x30, I2C_REG_SELECT_CMD);
+  await sleep.usleep(50);
+
+  await rawTimedWrite(0x20, I2C_REG_SELECT_CMD);
+  await sleep.usleep(50);
   //Defines the number of display lines N and font F??
-  rawTimedWrite(0x20, I2C_REG_SELECT_CMD)
-  //Mysterious unexplainable bits to write 
-  rawTimedWrite(0x80, I2C_REG_SELECT_CMD)
-  rawTimedWrite(0x00, I2C_REG_SELECT_CMD)
-  rawTimedWrite(0xc0, I2C_REG_SELECT_CMD)
-  rawTimedWrite(0x00, I2C_REG_SELECT_CMD)
-  rawTimedWrite(0x10, I2C_REG_SELECT_CMD)
-  rawTimedWrite(0x00, I2C_REG_SELECT_CMD)
+  await rawTimedWrite(0x20, I2C_REG_SELECT_CMD);
+  await rawTimedWrite(0x80, I2C_REG_SELECT_CMD);
+  await sleep.usleep(50);
+  // Unexplainable bits the datasheet insisted I send
+  await rawTimedWrite(0x00, I2C_REG_SELECT_CMD);
+  await rawTimedWrite(0x80, I2C_REG_SELECT_CMD);
+  await sleep.usleep(50);
+
+  await rawTimedWrite(0x00, I2C_REG_SELECT_CMD);
+  await rawTimedWrite(0x10, I2C_REG_SELECT_CMD);
+  await sleep.usleep(2000);
+
+  await rawTimedWrite(0x00, I2C_REG_SELECT_CMD);
   //Set cursor and display movement properties (?) This means it does NOT scroll
-  rawTimedWrite(0x60, I2C_REG_SELECT_CMD)
+  await rawTimedWrite(0x60, I2C_REG_SELECT_CMD);
+  await sleep.usleep(50);
+
+  await rawTimedWrite(0x00, I2C_REG_SELECT_CMD);
+  await rawTimedWrite(0xC0, I2C_REG_SELECT_CMD);
+  await sleep.usleep(50);
 }
 
 function positionCursor(row, col) {
@@ -126,13 +154,18 @@ function positionCursor(row, col) {
   rawTimedWrite((cleanCol << 4), I2C_REG_SELECT_CMD)
 }
 
-function writeStringToI2C(displayString) {
-  displayString.split('').forEach((char) => {
+async function writeStringToI2C(displayString, t = 75) {
+  for (const char of displayString.split('')) {
     let dataToSend = char.charCodeAt(0)
     rawTimedWrite((dataToSend & 0xf0), I2C_REG_SELECT_CHAR)
     rawTimedWrite(((dataToSend << 4) & 0xf0), I2C_REG_SELECT_CHAR)
-  })
+    await delay(t)
+  }
+}
 
+async function clearDisplay() {
+  await rawTimedWrite(0x00, I2C_REG_SELECT_CMD)
+  await rawTimedWrite(0x10, I2C_REG_SELECT_CMD)
 }
 
 function i2cBacklight(onOff) {
